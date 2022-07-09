@@ -1,73 +1,99 @@
-import {
-  wrapperButton, wrapperTop, printTopBottom, buttons,
-} from './utils';
+import { body, buttonRemoveBlock, newBlockInit, newBlock } from './utils';
 
 export default class Inspector {
-  constructor() {
-    this.topOrBottom = undefined;
-    this.oldElem = undefined;
+  constructor(page) {
+    this.page = page;
+    this.buttonRemove = undefined;
   }
 
-  checkWindow() {
-    const viewportHeight = window.innerHeight;
-    window.addEventListener('scroll', () => {
-      if (this.topOrBottom === 'top' && this.oldElem.getBoundingClientRect().top < 130) {
-        this.oldElem.closest('.wrapper__button').querySelector('.popopver').remove();
-        this.oldElem.closest('.wrapper__button').insertAdjacentHTML('beforeend', printTopBottom(wrapperButton));
-        this.getOffset(document.querySelector('.popopver'), this.oldElem);
-        this.topOrBottom = 'bottom';
+  init() {
+    localStorage.setItem('dom', JSON.stringify(this.page));
+    body.insertAdjacentHTML('afterbegin', this.page);
+  }
+
+  render() {
+    body.insertAdjacentHTML('afterbegin', JSON.parse(localStorage.getItem('dom')));
+  }
+
+  clearStorage() {
+    localStorage.clear();
+  }
+
+  removePage() {
+    document.querySelector('.wrapper').remove();
+  }
+
+  renderButtonRemove() {
+        body.addEventListener('mouseover', (e) => {
+          if (e.target.closest('.block__text')) {
+            if (!e.target.closest('.block__text').querySelector('.wrapper__button-remove')) {
+              if (this.buttonRemove) {
+                this.buttonRemove.remove();
+                this.buttonRemove = undefined;
+              }
+              e.target.closest('.block__text').insertAdjacentHTML('afterbegin', buttonRemoveBlock);
+              this.buttonRemove = e.target.closest('.block__text').querySelector('.wrapper__button-remove');
+            }
+          }
+        });
+
+    body.addEventListener('mouseover', (e) => {
+      if (Array.from(document.querySelectorAll('.wrapper__block')).find(a => a === e.target)) {
+        if (this.buttonRemove) {
+          this.buttonRemove.remove();
+          this.buttonRemove = undefined;
+        }
+      }
+    });
+
+    body.addEventListener('click', (e) => {
+      if (e.target.closest('.wrapper__button-remove')) {
+        e.target.closest('.block__text').remove();
+        const wrapper = document.querySelector('.wrapper');
+        this.saveDOM(wrapper.outerHTML);
       }
 
-      if (this.topOrBottom === 'bottom' && viewportHeight - this.oldElem.getBoundingClientRect().bottom < 130) {
-        this.oldElem.closest('.wrapper__button').querySelector('.popopver').remove();
-        this.oldElem.closest('.wrapper__button').insertAdjacentHTML('afterbegin', printTopBottom(wrapperTop));
-        this.getOffset(document.querySelector('.popopver'), this.oldElem);
-        this.topOrBottom = 'top';
+      if (e.target.closest('.icon-pr')) {
+        e.target.closest('.block__text_init').remove();
+        const cardsAdd = Array.from(document.querySelectorAll('.card-add'));
+        cardsAdd.forEach(a => {
+          if (a.classList.contains('hidden')) {
+            a.classList.remove('hidden');
+          }
+        });
       }
     });
   }
 
-  clickButtons() {
-    buttons.forEach((a, i) => {
-      a.addEventListener('click', (e) => {
-        if (!this.oldElem) {
-          const buttomTop = buttons[i].getBoundingClientRect().top;
-          this.oldElem = e.target;
-          if (buttomTop > 130) {
-            buttons[i].closest('.wrapper__button').insertAdjacentHTML('afterbegin', printTopBottom(wrapperTop));
-            this.getOffset(document.querySelector('.popopver'), buttons[i]);
-            this.topOrBottom = 'top';
-          } else {
-            buttons[i].closest('.wrapper__button').insertAdjacentHTML('beforeend', printTopBottom(wrapperButton));
-            this.getOffset(document.querySelector('.popopver'), buttons[i]);
-            this.topOrBottom = 'bottom';
+  saveDOM(page) {
+    localStorage.setItem('dom', JSON.stringify(page));
+  }
+
+  addCard() {
+    const cardsAdd = Array.from(document.querySelectorAll('.card-add'));
+    cardsAdd.forEach(a => {
+      a.addEventListener('click', () => {
+        cardsAdd.forEach(a => {
+          if (a.classList.contains('hidden')) {
+            a.classList.remove('hidden');
+            document.querySelector('.block__text_init').remove();
           }
-        } else if (this.oldElem === e.target && this.topOrBottom) {
-          this.oldElem.closest('.wrapper__button').querySelector('.popopver').remove();
-          this.oldElem = undefined;
-          this.topOrBottom = undefined;
-        } else if (this.oldElem !== e.target && this.topOrBottom) {
-          const buttomTop = buttons[i].getBoundingClientRect().top;
-          this.oldElem.closest('.wrapper__button').querySelector('.popopver').remove();
-          this.oldElem = e.target;
-          if (buttomTop > 130) {
-            buttons[i].closest('.wrapper__button').insertAdjacentHTML('afterbegin', printTopBottom(wrapperTop));
-            this.getOffset(document.querySelector('.popopver'), buttons[i]);
-            this.topOrBottom = 'top';
-          } else {
-            buttons[i].closest('.wrapper__button').insertAdjacentHTML('beforeend', printTopBottom(wrapperButton));
-            this.getOffset(document.querySelector('.popopver'), buttons[i]);
-            this.topOrBottom = 'bottom';
-          }
-        }
+        });
+        a.classList.add('hidden');
+        a.insertAdjacentHTML('afterend', newBlockInit);
       });
     });
-  }
 
-  getOffset(elemPopopver, elemButton) {
-    console.log(this.topOrBottom);
-    // eslint-disable-next-line no-param-reassign
-    elemPopopver.style.left = `${String((Number((getComputedStyle(elemButton).width).substring(0, getComputedStyle(elemButton).width.length - 2))
-    - Number(getComputedStyle(elemPopopver).width.substring(0, getComputedStyle(elemPopopver).width.length - 2))) / 2)}px`;
+    body.addEventListener('click', (e) => {
+      const elemSpanHidden = cardsAdd.find(a => a.classList.contains('hidden'));
+      if (e.target.closest('.button__text-add') && elemSpanHidden) {
+        const newBlockText = newBlock(document.querySelector('textarea').value);
+        elemSpanHidden.insertAdjacentHTML('beforebegin', newBlockText);
+        document.querySelector('.block__text_init').remove();
+        elemSpanHidden.classList.remove('hidden');
+        const wrapper = document.querySelector('.wrapper');
+        this.saveDOM(wrapper.outerHTML);
+      }
+    });
   }
 }
