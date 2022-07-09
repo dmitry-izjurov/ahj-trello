@@ -15,7 +15,9 @@ buttonResetPage.addEventListener('click', () => {
   trello.init();
   trello.renderButtonRemove();
   trello.addCard();
+  trello.dragElem();
 });
 
 trello.renderButtonRemove();
 trello.addCard();
+trello.dragElem();

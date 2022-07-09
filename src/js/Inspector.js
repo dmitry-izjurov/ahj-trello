@@ -4,6 +4,8 @@ export default class Inspector {
   constructor(page) {
     this.page = page;
     this.buttonRemove = undefined;
+    this.draggedElem = null;
+    this.ghostElem = null;
   }
 
   init() {
@@ -94,6 +96,39 @@ export default class Inspector {
         const wrapper = document.querySelector('.wrapper');
         this.saveDOM(wrapper.outerHTML);
       }
+    });
+  }
+
+  dragElem() {
+    const elemsWrapperBlock = Array.from(document.querySelectorAll('.wrapper__block'));
+    elemsWrapperBlock.forEach(a => {
+      a.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        // if (!e.target.closest('.block__text').classList.contains('block__text')) return;
+        // console.log(e.target.closest('.block__text'));
+        this.draggedElem = e.target.closest('.block__text');
+        this.ghostElem = this.draggedElem.cloneNode(true);
+        this.ghostElem.classList.add('dragged');
+        body.appendChild(this.ghostElem);
+        this.ghostElem.style.left = `${e.pageX - this.ghostElem.offsetWidth / 2}px`;
+        this.ghostElem.style.top = `${e.pageY - this.ghostElem.offsetHeight / 2}px`;
+      });
+
+      a.addEventListener('mousemove', (e) => {
+        e.preventDefault();
+        if (!this.draggedElem) return;
+        this.ghostElem.style.left = `${e.pageX - this.ghostElem.offsetWidth / 2}px`;
+        this.ghostElem.style.top = `${e.pageY - this.ghostElem.offsetHeight / 2}px`;
+      });
+
+      a.addEventListener('mouseup', (e) => {
+        if (!this.draggedElem) return;
+        const closest = document.elementFromPoint(e.clientX, e.clientY);
+        e.currentTarget.insertBefore(this.draggedElem, closest);
+        body.removeChild(this.ghostElem);
+        this.draggedElem = null;
+        this.ghostElem = null;
+      });
     });
   }
 }

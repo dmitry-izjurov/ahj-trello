@@ -71,6 +71,14 @@ p {
     background-color: #d3d7ff;
 }
 
+.dragged {
+  border-radius: 10px;
+  position: absolute;
+  z-index: 999;
+  pointer-events: none;
+  background:#fff;
+}
+
 .block__footer {
     display: flex;
 }
