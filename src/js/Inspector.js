@@ -1,4 +1,6 @@
-import { body, buttonRemoveBlock, newBlockInit, newBlock } from './utils';
+import {
+  body, buttonRemoveBlock, newBlockInit, newBlock,
+} from './utils';
 
 export default class Inspector {
   constructor(page) {
@@ -6,6 +8,10 @@ export default class Inspector {
     this.buttonRemove = undefined;
     this.draggedElem = null;
     this.ghostElem = null;
+    this.draggedElemBlockText = null;
+    this.elemRendered = false;
+    this.previousElem = null;
+    this.newElem = null;
   }
 
   init() {
@@ -14,33 +20,32 @@ export default class Inspector {
   }
 
   render() {
+    console.log(this.draggedElem);
     body.insertAdjacentHTML('afterbegin', JSON.parse(localStorage.getItem('dom')));
   }
 
   clearStorage() {
+    console.log(this.draggedElem);
     localStorage.clear();
   }
 
   removePage() {
+    console.log(this.draggedElem);
     document.querySelector('.wrapper').remove();
   }
 
   renderButtonRemove() {
-        body.addEventListener('mouseover', (e) => {
-          if (e.target.closest('.block__text')) {
-            if (!e.target.closest('.block__text').querySelector('.wrapper__button-remove')) {
-              if (this.buttonRemove) {
-                this.buttonRemove.remove();
-                this.buttonRemove = undefined;
-              }
-              e.target.closest('.block__text').insertAdjacentHTML('afterbegin', buttonRemoveBlock);
-              this.buttonRemove = e.target.closest('.block__text').querySelector('.wrapper__button-remove');
-            }
-          }
-        });
-
     body.addEventListener('mouseover', (e) => {
-      if (Array.from(document.querySelectorAll('.wrapper__block')).find(a => a === e.target)) {
+      if (e.target.closest('.block__text') && !e.target.closest('.block__text').querySelector('.wrapper__button-remove')) {
+        if (this.buttonRemove) {
+          this.buttonRemove.remove();
+          this.buttonRemove = undefined;
+        }
+        e.target.closest('.block__text').insertAdjacentHTML('afterbegin', buttonRemoveBlock);
+        this.buttonRemove = e.target.closest('.block__text').querySelector('.wrapper__button-remove');
+      }
+
+      if (Array.from(document.querySelectorAll('.wrapper__block')).find((a) => a === e.target)) {
         if (this.buttonRemove) {
           this.buttonRemove.remove();
           this.buttonRemove = undefined;
@@ -50,7 +55,7 @@ export default class Inspector {
 
     body.addEventListener('click', (e) => {
       if (e.target.closest('.wrapper__button-remove')) {
-        e.target.closest('.block__text').remove();
+        e.target.closest('.wrapper__box-text').remove();
         const wrapper = document.querySelector('.wrapper');
         this.saveDOM(wrapper.outerHTML);
       }
@@ -58,7 +63,7 @@ export default class Inspector {
       if (e.target.closest('.icon-pr')) {
         e.target.closest('.block__text_init').remove();
         const cardsAdd = Array.from(document.querySelectorAll('.card-add'));
-        cardsAdd.forEach(a => {
+        cardsAdd.forEach((a) => {
           if (a.classList.contains('hidden')) {
             a.classList.remove('hidden');
           }
@@ -68,16 +73,17 @@ export default class Inspector {
   }
 
   saveDOM(page) {
+    console.log(this.draggedElem);
     localStorage.setItem('dom', JSON.stringify(page));
   }
 
   addCard() {
     const cardsAdd = Array.from(document.querySelectorAll('.card-add'));
-    cardsAdd.forEach(a => {
+    cardsAdd.forEach((a) => {
       a.addEventListener('click', () => {
-        cardsAdd.forEach(a => {
-          if (a.classList.contains('hidden')) {
-            a.classList.remove('hidden');
+        cardsAdd.forEach((arg) => {
+          if (arg.classList.contains('hidden')) {
+            arg.classList.remove('hidden');
             document.querySelector('.block__text_init').remove();
           }
         });
@@ -87,7 +93,7 @@ export default class Inspector {
     });
 
     body.addEventListener('click', (e) => {
-      const elemSpanHidden = cardsAdd.find(a => a.classList.contains('hidden'));
+      const elemSpanHidden = cardsAdd.find((a) => a.classList.contains('hidden'));
       if (e.target.closest('.button__text-add') && elemSpanHidden) {
         const newBlockText = newBlock(document.querySelector('textarea').value);
         elemSpanHidden.insertAdjacentHTML('beforebegin', newBlockText);
@@ -101,17 +107,23 @@ export default class Inspector {
 
   dragElem() {
     const elemsWrapperBlock = Array.from(document.querySelectorAll('.wrapper__block'));
-    elemsWrapperBlock.forEach(a => {
+    elemsWrapperBlock.forEach((a) => {
       a.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        // if (!e.target.closest('.block__text').classList.contains('block__text')) return;
-        // console.log(e.target.closest('.block__text'));
-        this.draggedElem = e.target.closest('.block__text');
-        this.ghostElem = this.draggedElem.cloneNode(true);
-        this.ghostElem.classList.add('dragged');
-        body.appendChild(this.ghostElem);
-        this.ghostElem.style.left = `${e.pageX - this.ghostElem.offsetWidth / 2}px`;
-        this.ghostElem.style.top = `${e.pageY - this.ghostElem.offsetHeight / 2}px`;
+        if (e.target.closest('.wrapper__button-remove')) return;
+        if (e.target.closest('.block__text')) {
+          e.preventDefault();
+          this.draggedElem = e.target.closest('.wrapper__box-text');
+          e.target.closest('.wrapper__box-text').classList.add('drag');
+          this.ghostElem = this.draggedElem.cloneNode(true);
+          this.ghostElem.classList.add('dragged');
+          body.appendChild(this.ghostElem);
+          this.ghostElem.style.left = `${e.pageX - this.ghostElem.offsetWidth / 2}px`;
+          this.ghostElem.style.top = `${e.pageY - this.ghostElem.offsetHeight / 2}px`;
+          this.draggedElemBlockText = e.target.closest('.block__text');
+          this.draggedElemBlockText.classList.add('ghost');
+          this.previousElem = e.target.closest('.wrapper__box-text').previousElementSibling;
+          if (this.previousElem) this.previousElem.classList.add('drag');
+        }
       });
 
       a.addEventListener('mousemove', (e) => {
@@ -119,15 +131,45 @@ export default class Inspector {
         if (!this.draggedElem) return;
         this.ghostElem.style.left = `${e.pageX - this.ghostElem.offsetWidth / 2}px`;
         this.ghostElem.style.top = `${e.pageY - this.ghostElem.offsetHeight / 2}px`;
+
+        if (e.target.closest('.wrapper__box-text') === null) return;
+        if (this.elemRendered && this.draggedElem === e.target.closest('.wrapper__box-text')) {
+          this.newElem.remove();
+        }
+
+        if (!this.elemRendered && !e.target.closest('.wrapper__box-text').classList.contains('drag')) {
+          e.target.closest('.wrapper__box-text').insertAdjacentHTML('afterend', this.draggedElem.outerHTML);
+          this.newElem = e.target.closest('.wrapper__box-text').nextElementSibling;
+          this.elemRendered = true;
+        }
+
+        if (this.elemRendered && this.newElem !== e.target.closest('.wrapper__box-text')
+          && !e.target.closest('.wrapper__box-text').classList.contains('drag')) {
+          this.newElem.remove();
+          e.target.closest('.wrapper__box-text').insertAdjacentHTML('afterend', this.draggedElem.outerHTML);
+          this.newElem = e.target.closest('.wrapper__box-text').nextElementSibling;
+        }
       });
 
       a.addEventListener('mouseup', (e) => {
         if (!this.draggedElem) return;
-        const closest = document.elementFromPoint(e.clientX, e.clientY);
-        e.currentTarget.insertBefore(this.draggedElem, closest);
+        if (this.draggedElem !== e.target.closest('.wrapper__box-text') && this.elemRendered) this.draggedElem.remove();
+        if (this.newElem) this.newElem.classList.remove('ghost');
         body.removeChild(this.ghostElem);
         this.draggedElem = null;
         this.ghostElem = null;
+        this.draggedElemBlockText = null;
+        this.elemRendered = false;
+        this.previousElem = null;
+        this.newElem = null;
+        Array.from(document.querySelectorAll('.wrapper__box-text')).forEach((arg) => {
+          if (arg.classList.contains('drag')) arg.classList.remove('drag');
+        });
+        Array.from(document.querySelectorAll('.block__text')).forEach((arg) => {
+          if (arg.classList.contains('ghost')) arg.classList.remove('ghost');
+        });
+        const wrapper = document.querySelector('.wrapper');
+        this.saveDOM(wrapper.outerHTML);
       });
     });
   }

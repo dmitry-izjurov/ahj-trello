@@ -3,10 +3,11 @@ import { page, buttonResetPage } from './utils';
 
 const trello = new Inspector(page);
 
+// eslint-disable-next-line no-prototype-builtins
 if (localStorage.hasOwnProperty('dom')) {
-    trello.render();
+  trello.render();
 } else {
-    trello.init();
+  trello.init();
 }
 
 buttonResetPage.addEventListener('click', () => {

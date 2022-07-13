@@ -35,36 +35,37 @@ p {
 }
 
 .header {
-    /* display: flex;
-    justify-content: space-between;
-    align-items: center; */
-    /* padding: 8px; */
     font-size: 16px;
     text-transform: uppercase;
 }
 
-/* .header::after {
-    content: "";
-    width: 20px;
-    height: 20px;
-    background-image: url('../img/ellipsis_menu_dots_icon_143021.png');
-    background-repeat: no-repeat;
-    background-position: center center;
-    background-size: 20px;
-} */
+.wrapper__box-text {
+    position: relative;
+    padding-bottom: 8px;
+}
 
+.wrapper__box-text:last-child {
+    padding-bottom: 0;
+    width: 255px;
+}
+
+.ghost::after {
+    content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.75;
+  background-color: #719ECE;
+}
 
 .block__text {
     position: relative;
     box-sizing: border-box;
-    margin-bottom: 8px;
     padding: 8px;
     border-radius: 5px;
     background-color: #ffffff;
-}
-
-.block__text:last-child {
-    margin-bottom: 0;
 }
 
 .block__text:hover {
